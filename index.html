@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TacticsLab Pro - Landscape Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Chakra Petch', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    .pitch-grass-landscape {
+      background-color: #07170e;
+      background-image:
+        radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 80%),
+        repeating-linear-gradient(90deg, rgba(16, 185, 129, 0.028) 0px, rgba(16, 185, 129, 0.028) 50px, rgba(0, 0, 0, 0.28) 50px, rgba(0, 0, 0, 0.28) 100px),
+        linear-gradient(rgba(16, 185, 129, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 100px 100%, 30px 30px, 30px 30px;
+    }
+
+    .pitch-glow-boundary {
+      box-shadow: 0 0 35px rgba(16, 185, 129, 0.18), inset 0 0 40px rgba(0, 0, 0, 0.9);
+    }
+
+    @keyframes tokenPulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 20px 4px currentColor, 0 0 6px #ffffff;
+      }
+      50% {
+        box-shadow: 0 0 8px 1px currentColor;
+      }
+    }
+
+    @keyframes tokenPulseBlink {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: drop-shadow(0 0 14px currentColor);
+      }
+      50% {
+        opacity: 0.28;
+        transform: scale(0.96);
+        filter: drop-shadow(0 0 3px currentColor);
+      }
+    }
+
+    .led-glow .player-token-body {
+      animation: tokenPulseGlow 2.2s infinite ease-in-out;
+    }
+
+    .led-blink .player-token-body {
+      animation: tokenPulseBlink 1.05s infinite ease-in-out;
+    }
+
+    .led-steady .player-token-body {
+      box-shadow: 0 0 14px 2px currentColor;
+    }
+
+    .led-off .player-token-body {
+      box-shadow: none;
+    }
+
+    .player-token {
+      touch-action: none;
+      user-select: none;
+      transition: transform 0.12s ease-out;
+    }
+
+    .player-token.dragging {
+      cursor: grabbing !important;
+      transform: scale(1.22) translateY(-3px);
+      z-index: 80 !important;
+    }
+
+    .player-token.active-player {
+      z-index: 70 !important;
+      transform: scale(1.14);
+    }
+
+    .player-token.active-player .player-token-body {
+      box-shadow: 0 0 28px 7px currentColor, 0 0 10px #ffffff !important;
+      border-color: #ffffff !important;
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090e1a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #10b981;
+    }
+  </style>
+</head>
+
+<body class="bg-[#04060d] text-slate-100 font-sans h-screen w-screen overflow-hidden flex flex-col select-none antialiased">
+  <header class="h-12 sm:h-14 border-b border-slate-800/90 bg-[#080d1b] px-3 sm:px-5 flex items-center justify-between shrink-0 z-30 shadow-lg">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center shadow-md shadow-emerald-500/20">
+        <svg class="w-5 h-5 text-slate-950 font-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-display font-bold text-xs sm:text-base tracking-wide flex items-center gap-1.5">
+          TACTICS<span class="text-emerald-400">LAB</span> <span class="text-cyan-400 font-mono text-xs">WIDE</span>
+        </h1>
+      </div>
+      <div class="hidden lg:flex items-center gap-2 ml-3 border-l border-slate-800 pl-3 text-[11px] font-mono">
+        <span class="text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">Easy (GK #1)</span>
+        <span class="text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">Nick (DEF #4)</span>
+        <span class="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">Daniel &amp; Angel (Extras)</span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <div class="hidden md:flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-[11px] font-mono">
+        <button id="btn-fx-glow" onclick="setLedEffect('glow')" class="px-2 py-0.5 rounded text-emerald-400 bg-emerald-500/20 font-bold">Glow</button>
+        <button id="btn-fx-blink" onclick="setLedEffect('blink')" class="px-2 py-0.5 rounded text-slate-400 hover:text-white">Blink</button>
+        <button id="btn-fx-steady" onclick="setLedEffect('steady')" class="px-2 py-0.5 rounded text-slate-400 hover:text-white">Steady</button>
+        <button id="btn-fx-off" onclick="setLedEffect('off')" class="px-2 py-0.5 rounded text-slate-400 hover:text-white">Off</button>
+      </div>
+
+      <button id="btn-multi-toggle" onclick="toggleMultiSelection()" title="Toggle showing multiple player lines at the same time" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-300 hover:border-cyan-400 transition">
+        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span class="hidden sm:inline">Link Lines:</span>
+        <span id="multi-select-label" class="font-mono text-slate-400 text-[11px]">OFF</span>
+      </button>
+
+      <button onclick="openPlansHistoryModal()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/25 text-xs font-bold transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span>Plans Hub</span>
+        <span id="hub-count-badge" class="px-1.5 py-0.2 bg-cyan-400/20 text-cyan-200 text-[10px] rounded-full font-mono">4</span>
+      </button>
+
+      <button onclick="openSavePlanModal()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-md shadow-emerald-500/20">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+        <span class="hidden sm:inline">Save</span>
+      </button>
+
+      <button onclick="shareCurrentPlanURL()" title="Share Link with other coaches" class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+      </button>
+
+      <button onclick="startCoachTutorial(true)" title="Coach Tutorial" class="p-1.5 sm:px-2 sm:py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0-4h.01M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20z"/>
+        </svg>
+      </button>
+
+      <button onclick="toggleSidebar()" class="p-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="flex-1 flex overflow-hidden relative">
+    <aside class="w-12 sm:w-14 bg-[#060a14] border-r border-slate-800/90 flex flex-col items-center py-2.5 gap-2 shrink-0 z-20">
+      <button onclick="resetBallPosition()" title="Reset Ball to Kick-Off Spot" class="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700 hover:border-emerald-400 flex items-center justify-center transition shadow-md group relative">
+        <div class="w-4 h-4 rounded-full bg-white flex items-center justify-center">
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-900"></div>
+        </div>
+      </button>
+
+      <div class="w-6 h-[1px] bg-slate-800 my-0.5"></div>
+
+      <button id="tool-select" onclick="setActiveTool('select')" title="Select & Move Player" class="tool-btn w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center transition shadow-md shadow-emerald-500/25">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+      </button>
+
+      <button id="tool-arrow" onclick="setActiveTool('arrow')" title="Draw Sprint Line (Solid Arrow)" class="tool-btn w-9 h-9 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      </button>
+
+      <button id="tool-pass" onclick="setActiveTool('pass')" title="Draw Passing Lane (Dashed Line)" class="tool-btn w-9 h-9 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="7" y2="12" stroke-dasharray="2 2" stroke-linecap="round"/>
+          <line x1="10" y1="12" x2="16" y2="12" stroke-dasharray="2 2" stroke-linecap="round"/>
+          <polyline points="15 6 21 12 15 18" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button id="tool-dribble" onclick="setActiveTool('dribble')" title="Draw Dribbling Route (Wavy Line)" class="tool-btn w-9 h-9 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12c2.5-4 4.5-4 7 0s4.5 4 7 0 4.5-4 7 0"/></svg>
+      </button>
+
+      <button id="tool-pen" onclick="setActiveTool('pen')" title="Freehand Pen" class="tool-btn w-9 h-9 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+      </button>
+
+      <div class="mt-auto flex flex-col items-center gap-2 pb-1">
+        <button onclick="undoActiveRoute()" title="Undo Player Line" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l6-6M3 10l6 6"/></svg>
+        </button>
+        <button onclick="clearSelectedRoutes()" title="Clear Active Player Line" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-rose-400 hover:bg-rose-500/20 flex items-center justify-center transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 bg-[#020409] p-2 sm:p-3.5 flex flex-col items-center justify-center overflow-hidden relative">
+      <div id="landscape-pitch-wrapper" class="relative rounded-2xl overflow-hidden border border-emerald-500/40 pitch-glow-boundary led-glow select-none touch-none w-full h-full max-w-[98vw] max-h-[92vh] aspect-[105/68] flex items-center justify-center">
+        <div class="absolute inset-0 pitch-grass-landscape">
+          <svg class="w-full h-full pointer-events-none" viewBox="0 0 1050 680" preserveAspectRatio="none">
+            <defs>
+              <filter id="neon-turf-glow" x="-10%" y="-10%" width="120%" height="120%">
+                <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <rect x="25" y="25" width="1000" height="630" fill="none" stroke="#ffffff" stroke-width="3" rx="4" stroke-opacity="0.9" filter="url(#neon-turf-glow)"/>
+            <line x1="525" y1="25" x2="525" y2="655" stroke="#ffffff" stroke-width="3" stroke-opacity="0.9" filter="url(#neon-turf-glow)"/>
+            <circle cx="525" cy="340" r="91.5" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.9" filter="url(#neon-turf-glow)"/>
+            <circle cx="525" cy="340" r="4.5" fill="#ffffff"/>
+            <rect x="25" y="138" width="165" height="404" fill="rgba(255,255,255,0.02)" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.9"/>
+            <rect x="25" y="248" width="55" height="184" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.9"/>
+            <circle cx="135" cy="340" r="4" fill="#ffffff"/>
+            <path d="M 190 274 A 91.5 91.5 0 0 1 190 406" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.9"/>
+            <rect x="11" y="295" width="14" height="90" fill="rgba(255,255,255,0.12)" stroke="#ffffff" stroke-width="2"/>
+            <rect x="860" y="138" width="165" height="404" fill="rgba(255,255,255,0.02)" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.9"/>
+            <rect x="970" y="248" width="55" height="184" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.9"/>
+            <circle cx="915" cy="340" r="4" fill="#ffffff"/>
+            <path d="M 860 274 A 91.5 91.5 0 0 0 860 406" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.9"/>
+            <rect x="1025" y="295" width="14" height="90" fill="rgba(255,255,255,0.12)" stroke="#ffffff" stroke-width="2"/>
+            <path d="M 25 45 A 20 20 0 0 0 45 25" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+            <path d="M 1005 25 A 20 20 0 0 0 1025 45" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+            <path d="M 25 635 A 20 20 0 0 1 45 655" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+            <path d="M 1005 655 A 20 20 0 0 1 1025 635" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+          </svg>
+        </div>
+
+        <canvas id="tactic-canvas" class="absolute inset-0 w-full h-full z-10 pointer-events-auto cursor-crosshair"></canvas>
+
+        <div id="tokens-layer" class="absolute inset-0 pointer-events-none z-20">
+          <div id="match-ball" class="absolute pointer-events-auto w-6 h-6 -ml-3 -mt-3 rounded-full bg-white shadow-[0_0_15px_#ffffff] cursor-grab flex items-center justify-center border-2 border-slate-950 transition-transform active:scale-125 z-40" style="left: 50%; top: 50%;">
+            <svg class="w-3.5 h-3.5 text-slate-900" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="12 2 15 8 21 9 17 14 18 20 12 17 6 20 7 14 3 9 9 8" fill="#0f172a"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="absolute bottom-2 left-3 pointer-events-none px-2.5 py-1 rounded-md bg-slate-950/80 backdrop-blur border border-slate-800 text-[10px] font-mono text-slate-400 z-30 flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="field-formation-indicator">2-2 Arena Landscape</span>
+        </div>
+      </div>
+    </main>
+
+    <aside id="side-panel" class="w-72 sm:w-80 bg-[#080d19] border-l border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto">
+      <div class="flex border-b border-slate-800 text-xs font-semibold bg-[#050811] sticky top-0 z-10">
+        <button onclick="switchTab('formations')" id="tab-btn-formations" class="flex-1 py-2.5 text-center text-emerald-400 border-b-2 border-emerald-400 font-display">Presets</button>
+        <button onclick="switchTab('bench')" id="tab-btn-bench" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 border-b-2 border-transparent font-display">Bench &amp; Subs</button>
+        <button onclick="switchTab('notes')" id="tab-btn-notes" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 border-b-2 border-transparent font-display">Notes</button>
+        <button onclick="switchTab('history')" id="tab-btn-history" class="flex-1 py-2.5 text-center text-slate-400 hover:text-slate-200 border-b-2 border-transparent font-display">Log</button>
+      </div>
+
+      <div id="tab-content-formations" class="p-3.5 space-y-3.5">
+        <div>
+          <label class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1.5">⚡ Arena &amp; Small-Sided (Landscape)</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="applyFormation('2-2')" class="p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-left transition">
+              <div class="text-xs font-bold text-white flex items-center justify-between">
+                <span>2-2 Arena</span>
+                <span class="text-[9px] bg-emerald-400/20 text-emerald-300 px-1 py-0.2 rounded font-mono">5v5</span>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-0.5">Nick in DEF, Easy in GK, 2 Forwards</p>
+            </button>
+
+            <button onclick="applyFormation('2-1-1')" class="p-2.5 rounded-xl border border-cyan-500/60 bg-cyan-500/10 hover:bg-cyan-500/20 text-left transition">
+              <div class="text-xs font-bold text-white flex items-center justify-between">
+                <span>2-1-1 Diamond</span>
+                <span class="text-[9px] bg-cyan-400/20 text-cyan-300 px-1 py-0.2 rounded font-mono">5v5</span>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-0.5">Nick DEF, 1 MID, 1 FWD, Easy GK</p>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Standard Squad Presets</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="applyFormation('2-3-1')" class="p-2 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-left text-xs font-semibold text-slate-200">2-3-1 <span class="text-[9px] text-slate-400">(7v7)</span></button>
+            <button onclick="applyFormation('3-2-3')" class="p-2 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-left text-xs font-semibold text-slate-200">3-2-3 <span class="text-[9px] text-slate-400">(9v9)</span></button>
+            <button onclick="applyFormation('4-3-3')" class="p-2 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-left text-xs font-semibold text-slate-200">4-3-3 <span class="text-[9px] text-slate-400">(11v11)</span></button>
+            <button onclick="applyFormation('4-4-2')" class="p-2 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-left text-xs font-semibold text-slate-200">4-4-2 <span class="text-[9px] text-slate-400">(Compact)</span></button>
+            <button onclick="applyFormation('3-5-2')" class="p-2 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-left text-xs font-semibold text-slate-200">3-5-2 <span class="text-[9px] text-slate-400">(Wingback)</span></button>
+            <button onclick="createNewBlankPlan()" class="p-2 rounded-lg border border-dashed border-slate-700 bg-slate-900/40 hover:bg-slate-800 text-left text-xs font-semibold text-emerald-400">+ Blank Canvas</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">On-Pitch Players</label>
+            <span id="active-pitch-count" class="text-[10px] text-emerald-400 font-mono">5 Active</span>
+          </div>
+          <div id="onpitch-list" class="space-y-1 max-h-48 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <div id="tab-content-bench" class="p-3.5 space-y-3.5 hidden">
+        <div class="bg-gradient-to-r from-emerald-950/40 to-slate-900 border border-emerald-500/30 rounded-xl p-2.5">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Substitutes &amp; Extras</span>
+            <span class="text-[9px] font-mono bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded">Daniel &amp; Angel</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Tap <b>Sub In</b> on Daniel, Angel, or any reserve, then click an on-pitch player to make a swap.</p>
+        </div>
+
+        <div id="bench-list" class="space-y-1.5"></div>
+
+        <div class="pt-2 border-t border-slate-800">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Add Player to Bench</label>
+          <div class="flex gap-1.5">
+            <input type="text" id="add-bench-name" placeholder="Name" class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <input type="number" id="add-bench-no" placeholder="#" class="w-12 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <button onclick="registerNewBenchPlayer()" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-content-notes" class="p-3.5 space-y-3 hidden">
+        <div class="flex items-center justify-between">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Directives &amp; Strategy</label>
+          <button onclick="saveNotesToState(true)" class="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">Save</button>
+        </div>
+
+        <div class="space-y-2.5">
+          <div>
+            <span class="text-[10px] font-mono text-cyan-400 uppercase">Defensive Phase (Nick &amp; Easy):</span>
+            <textarea id="notes-defense" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-sans mt-1"></textarea>
+          </div>
+          <div>
+            <span class="text-[10px] font-mono text-emerald-400 uppercase">Transition / Attack Phase:</span>
+            <textarea id="notes-midfield" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-sans mt-1"></textarea>
+          </div>
+          <div>
+            <span class="text-[10px] font-mono text-yellow-400 uppercase">Extras &amp; Subs (Daniel &amp; Angel):</span>
+            <textarea id="notes-subs" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-yellow-500 font-sans mt-1"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-content-history" class="p-3.5 space-y-2 hidden">
+        <div class="flex items-center justify-between">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Live Action Audit</label>
+          <button onclick="clearAuditLog()" class="text-[10px] text-slate-400 hover:text-rose-400">Clear</button>
+        </div>
+        <div id="audit-log-container" class="space-y-1 max-h-[70vh] overflow-y-auto pr-1 font-mono text-[10px]"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="plans-hub-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-3 hidden">
+    <div class="bg-[#090f1d] border-2 border-cyan-500/50 rounded-2xl max-w-3xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-[#060a14]">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-bold">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          </div>
+          <div>
+            <h2 class="font-display font-bold text-sm text-white">Coach Plans History &amp; Community Exchange</h2>
+            <p class="text-[10px] text-slate-400">Load plans from previous coaches or review past match structures.</p>
+          </div>
+        </div>
+        <button onclick="closePlansHistoryModal()" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">✕</button>
+      </div>
+
+      <div class="px-4 py-2 border-b border-slate-800/80 bg-slate-900/60 flex items-center justify-between gap-2">
+        <input type="text" id="hub-search-input" oninput="filterHubPlans()" placeholder="Filter by Coach, 2-2, 2-1-1, or title..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500">
+        <button onclick="openSavePlanModal()" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs transition shrink-0">+ Save Current</button>
+      </div>
+
+      <div class="flex-1 p-4 overflow-y-auto space-y-2" id="hub-plans-list"></div>
+    </div>
+  </div>
+
+  <div id="save-plan-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#0b1222] border border-emerald-500/60 rounded-2xl max-w-sm w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <h3 class="font-display font-bold text-sm text-white">Save Plan to History Hub</h3>
+        <button onclick="closeSavePlanModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="py-3 space-y-2.5">
+        <div>
+          <label class="block text-[11px] font-mono text-slate-400 mb-0.5">Coach Name:</label>
+          <input type="text" id="input-save-coach" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-[11px] font-mono text-slate-400 mb-0.5">Game Plan Title:</label>
+          <input type="text" id="input-save-title" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-[11px] font-mono text-slate-400 mb-0.5">Category:</label>
+          <select id="input-save-category" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <option value="2-2 Arena">2-2 Arena</option>
+            <option value="2-1-1 Diamond">2-1-1 Diamond</option>
+            <option value="Counter-Attack">Counter-Attack</option>
+            <option value="High Press">High Press</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeSavePlanModal()" class="px-3 py-1 rounded-lg bg-slate-800 text-xs text-slate-300">Cancel</button>
+        <button onclick="confirmSaveGamePlan()" class="px-3.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs">Save Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tutorial-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#0b1222] border border-emerald-500/60 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <h3 id="tut-title" class="font-display font-bold text-sm text-white">Coach Guide</h3>
+        </div>
+        <span id="tut-step-counter" class="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">1 / 5</span>
+      </div>
+
+      <div class="py-4 text-center">
+        <div id="tut-icon-box" class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2.5 mx-auto"></div>
+        <p id="tut-body" class="text-xs text-slate-300 leading-relaxed"></p>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+        <button onclick="skipTutorial()" class="text-xs text-slate-400 hover:text-white px-2 py-1">Skip</button>
+        <div class="flex gap-1.5">
+          <button id="tut-prev-btn" onclick="prevTutorialStep()" class="px-3 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white">Prev</button>
+          <button id="tut-next-btn" onclick="nextTutorialStep()" class="px-3.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-message" class="fixed bottom-4 right-4 bg-[#0a0f1d] border border-emerald-500/50 text-emerald-300 text-xs px-3.5 py-2 rounded-xl shadow-lg transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none z-50 flex items-center gap-2 font-medium">
+    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    <span id="toast-text">Formation updated</span>
+  </div>
+
+  <script>
+    const state = {
+      planTitle: '2-2 Arena Landscape Masterplan',
+      coachName: 'Coach Bayardo',
+      formation: '2-2',
+      ledEffect: 'glow',
+      multiSelectMode: false,
+      selectedPlayerIds: [],
+      activeTool: 'select',
+      ball: { x: 50, y: 50 },
+      pendingSubSource: null,
+      pitchPlayers: [
+        { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 8, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+        { id: 'p-nick', name: 'Nick', no: 4, role: 'Defense (DEF)', x: 26, y: 34, isGK: false, ledColor: '#00e5ff', route: null },
+        { id: 'p-def2', name: 'Leo', no: 3, role: 'Defense (DEF)', x: 26, y: 66, isGK: false, ledColor: '#00ff88', route: null },
+        { id: 'p-fwd1', name: 'Marco', no: 9, role: 'Forward (ATT)', x: 68, y: 34, isGK: false, ledColor: '#ec4899', route: null },
+        { id: 'p-fwd2', name: 'Mateo', no: 10, role: 'Forward (ATT)', x: 68, y: 66, isGK: false, ledColor: '#ff007f', route: null }
+      ],
+      benchPlayers: [
+        { id: 'b-daniel', name: 'Daniel', no: 14, role: 'Extra / Attacking Sub', ledColor: '#00e5ff' },
+        { id: 'b-angel', name: 'Angel', no: 17, role: 'Extra / High-Pace Winger', ledColor: '#ffd600' },
+        { id: 'b-sam', name: 'Sam', no: 7, role: 'Midfield Reserve', ledColor: '#a855f7' },
+        { id: 'b-diego', name: 'Diego', no: 11, role: 'Striker Reserve', ledColor: '#f97316' }
+      ],
+      notes: {
+        defense: 'Nick controls central passing lanes and steps up. Easy stays vocal, sweeping loose balls beyond the 18-yard box.',
+        midfield: 'Quick horizontal shifts to exploit wide spaces. Forwards press opposition defenders on goal restarts.',
+        subs: 'Daniel provides dynamic attacking thrust; Angel enters to inject pace and press wide channels.'
+      },
+      auditLog: []
+    };
+
+    const defaultCommunityPlans = [
+      {
+        id: 'plan-1',
+        coach: 'Coach Bayardo',
+        title: '2-2 Arena High Press Overload',
+        category: '2-2 Arena',
+        date: '2026-09-24',
+        formation: '2-2',
+        notes: {
+          defense: 'Nick holds the defensive line. Easy sweeps aggressively.',
+          midfield: 'Direct give-and-go between forwards.',
+          subs: 'Daniel and Angel cycle in for high intensity.'
+        },
+        players: [
+          { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 8, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+          { id: 'p-nick', name: 'Nick', no: 4, role: 'Defense (DEF)', x: 26, y: 34, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-def2', name: 'Leo', no: 3, role: 'Defense (DEF)', x: 26, y: 66, isGK: false, ledColor: '#00ff88', route: null },
+          { id: 'p-fwd1', name: 'Marco', no: 9, role: 'Forward (ATT)', x: 68, y: 34, isGK: false, ledColor: '#ec4899', route: null },
+          { id: 'p-fwd2', name: 'Mateo', no: 10, role: 'Forward (ATT)', x: 68, y: 66, isGK: false, ledColor: '#ff007f', route: null }
+        ],
+        bench: [
+          { id: 'b-daniel', name: 'Daniel', no: 14, role: 'Extra / Attacking Sub', ledColor: '#00e5ff' },
+          { id: 'b-angel', name: 'Angel', no: 17, role: 'Extra / High-Pace Winger', ledColor: '#ffd600' }
+        ]
+      },
+      {
+        id: 'plan-2',
+        coach: 'Coach Miller',
+        title: '2-1-1 Grassroots Diamond Breakout',
+        category: '2-1-1 Diamond',
+        date: '2026-09-22',
+        formation: '2-1-1',
+        notes: {
+          defense: 'Nick & Leo form a dual wall. Easy commands box.',
+          midfield: 'Central midfield acts as distribution pivot.',
+          subs: 'Daniel rotates at striker; Angel in midfield.'
+        },
+        players: [
+          { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 8, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+          { id: 'p-nick', name: 'Nick', no: 4, role: 'Defense (DEF)', x: 25, y: 33, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-def2', name: 'Leo', no: 3, role: 'Defense (DEF)', x: 25, y: 67, isGK: false, ledColor: '#00ff88', route: null },
+          { id: 'p-mid', name: 'Sam', no: 8, role: 'Midfield Pivot', x: 50, y: 50, isGK: false, ledColor: '#a855f7', route: null },
+          { id: 'p-fwd', name: 'Marco', no: 9, role: 'Single Striker', x: 75, y: 50, isGK: false, ledColor: '#ec4899', route: null }
+        ],
+        bench: [
+          { id: 'b-daniel', name: 'Daniel', no: 14, role: 'Extra / Forward', ledColor: '#00e5ff' },
+          { id: 'b-angel', name: 'Angel', no: 17, role: 'Extra / Midfield', ledColor: '#ffd600' }
+        ]
+      }
+    ];
+
+    const SafeStorage = {
+      get(key, fallback = null) {
+        try {
+          const value = window.localStorage.getItem(key);
+          return value === null ? fallback : value;
+        } catch (error) {
+          console.warn(`Storage read failed for "${key}"`, error);
+          return fallback;
+        }
+      },
+
+      set(key, value) {
+        try {
+          window.localStorage.setItem(key, value);
+          return true;
+        } catch (error) {
+          console.warn(`Storage write failed for "${key}"`, error);
+          return false;
+        }
+      },
+
+      remove(key) {
+        try {
+          window.localStorage.removeItem(key);
+          return true;
+        } catch (error) {
+          console.warn(`Storage removal failed for "${key}"`, error);
+          return false;
+        }
+      }
+    };
+
+    let canvas, ctx, pitchContainer;
+    let isDrawing = false;
+    let currentDrawingStroke = null;
+    let toastTimer = null;
+  </script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      canvas = document.getElementById('tactic-canvas');
+      ctx = canvas.getContext('2d');
+      pitchContainer = document.getElementById('landscape-pitch-wrapper');
+
+      initializePlansStorage();
+      setupCanvasDimensions();
+      setupDrawingHandlers();
+      setupBallDrag();
+      renderPitchTokens();
+      renderBenchUI();
+      renderPitchRosterUI();
+      loadNotesIntoUI();
+      updateHubBadgeCount();
+
+      const loadedFromShare = checkForSharedUrlPlan();
+    });
+
+    function setupCanvasDimensions() {
+      function resizeCanvas() {
+        if (!canvas || !pitchContainer) {
+          return;
+        }
+
+        const rect = pitchContainer.getBoundingClientRect();
+
+        if (!rect.width || !rect.height) {
+          return;
+        }
+
+        const devicePixelRatio = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+
+        canvas.width = Math.round(rect.width * devicePixelRatio);
+        canvas.height = Math.round(rect.height * devicePixelRatio);
+
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+
+        ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
+        drawAllRoutes();
+      }
+
+      window.addEventListener('resize', resizeCanvas, { passive: true });
+
+      if ('ResizeObserver' in window) {
+        const observer = new ResizeObserver(resizeCanvas);
+        observer.observe(pitchContainer);
+      }
+
+      requestAnimationFrame(resizeCanvas);
+    }
+
+    function setActiveTool(tool) {
+      state.activeTool = tool;
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-600', 'text-white');
+        btn.classList.add('bg-slate-900', 'text-slate-400');
+      });
+
+      const activeBtn = document.getElementById(`tool-${tool}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-emerald-600', 'text-white');
+        activeBtn.classList.remove('bg-slate-900', 'text-slate-400');
+      }
+
+      canvas.style.pointerEvents = (tool === 'select') ? 'none' : 'auto';
+      showToast(`Tool: ${tool.toUpperCase()}`);
+    }
+
+    function toggleMultiSelection() {
+      state.multiSelectMode = !state.multiSelectMode;
+      const label = document.getElementById('multi-select-label');
+      const btn = document.getElementById('btn-multi-toggle');
+
+      if (state.multiSelectMode) {
+        label.innerText = 'ON';
+        label.className = 'font-mono text-cyan-400 font-bold text-[11px]';
+        btn.classList.add('border-cyan-500', 'bg-cyan-500/20');
+        showToast('Multi-Link ON: Tap multiple players to view all their lines');
+      } else {
+        label.innerText = 'OFF';
+        label.className = 'font-mono text-slate-400 text-[11px]';
+        btn.classList.remove('border-cyan-500', 'bg-cyan-500/20');
+        if (state.selectedPlayerIds.length > 1) {
+          state.selectedPlayerIds = [state.selectedPlayerIds[state.selectedPlayerIds.length - 1]];
+          renderPitchTokens();
+          drawAllRoutes();
+        }
+        showToast('Single-Player View: Showing one player route at a time');
+      }
+    }
+
+    function setupDrawingHandlers() {
+      const getCoords = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+      };
+
+      const start = (e) => {
+        if (state.activeTool === 'select') return;
+        if (state.selectedPlayerIds.length === 0) {
+          showToast('Tap a player token first to assign their matching LED route!');
+          return;
+        }
+
+        e.preventDefault();
+        isDrawing = true;
+        const coords = getCoords(e);
+        const activePlayer = state.pitchPlayers.find(p => p.id === state.selectedPlayerIds[state.selectedPlayerIds.length - 1]);
+        const color = activePlayer ? activePlayer.ledColor : '#00ff88';
+
+        currentDrawingStroke = {
+          playerId: activePlayer ? activePlayer.id : null,
+          type: state.activeTool,
+          color: color,
+          points: [{ x: coords.x, y: coords.y }]
+        };
+      };
+
+      const move = (e) => {
+        if (!isDrawing || !currentDrawingStroke) return;
+        e.preventDefault();
+        const coords = getCoords(e);
+
+        if (state.activeTool === 'pen') {
+          currentDrawingStroke.points.push(coords);
+        } else {
+          currentDrawingStroke.points = [currentDrawingStroke.points[0], coords];
+        }
+
+        drawAllRoutes();
+        renderNeonLine(currentDrawingStroke, ctx);
+      };
+
+      const end = () => {
+        if (!isDrawing || !currentDrawingStroke) return;
+        isDrawing = false;
+
+        if (currentDrawingStroke.points.length > 1) {
+          const p = state.pitchPlayers.find(pl => pl.id === currentDrawingStroke.playerId);
+          if (p) {
+            p.route = currentDrawingStroke;
+            logAudit(`Drew route for ${p.name}`);
+          }
+        }
+        currentDrawingStroke = null;
+        drawAllRoutes();
+      };
+
+      canvas.addEventListener('mousedown', start);
+      canvas.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', end);
+
+      canvas.addEventListener('touchstart', start, { passive: false });
+      canvas.addEventListener('touchmove', move, { passive: false });
+      window.addEventListener('touchend', end);
+    }
+
+    function drawAllRoutes() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      state.pitchPlayers.forEach(p => {
+        if (p.route && state.selectedPlayerIds.includes(p.id)) {
+          renderNeonLine(p.route, ctx);
+        }
+      });
+
+      if (currentDrawingStroke) {
+        renderNeonLine(currentDrawingStroke, ctx);
+      }
+    }
+
+    function renderNeonLine(stroke, targetCtx) {
+      if (!stroke || !stroke.points || stroke.points.length < 2) return;
+      targetCtx.save();
+
+      targetCtx.shadowColor = stroke.color;
+      targetCtx.shadowBlur = 14;
+      targetCtx.strokeStyle = stroke.color;
+      targetCtx.fillStyle = stroke.color;
+      targetCtx.lineWidth = 4.5;
+      targetCtx.lineCap = 'round';
+      targetCtx.lineJoin = 'round';
+
+      const p0 = stroke.points[0];
+      const p1 = stroke.points[stroke.points.length - 1];
+
+      if (stroke.type === 'pen') {
+        targetCtx.beginPath();
+        targetCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        for (let i = 1; i < stroke.points.length; i++) {
+          targetCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+        }
+        targetCtx.stroke();
+      }
+      else if (stroke.type === 'arrow') {
+        targetCtx.beginPath();
+        targetCtx.moveTo(p0.x, p0.y);
+        targetCtx.lineTo(p1.x, p1.y);
+        targetCtx.stroke();
+        drawArrowHead(p0.x, p0.y, p1.x, p1.y, targetCtx);
+      }
+      else if (stroke.type === 'pass') {
+        targetCtx.setLineDash([9, 7]);
+        targetCtx.beginPath();
+        targetCtx.moveTo(p0.x, p0.y);
+        targetCtx.lineTo(p1.x, p1.y);
+        targetCtx.stroke();
+        targetCtx.setLineDash([]);
+        drawArrowHead(p0.x, p0.y, p1.x, p1.y, targetCtx);
+      }
+      else if (stroke.type === 'dribble') {
+        const dx = p1.x - p0.x;
+        const dy = p1.y - p0.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+
+        targetCtx.save();
+        targetCtx.translate(p0.x, p0.y);
+        targetCtx.rotate(angle);
+
+        targetCtx.beginPath();
+        targetCtx.moveTo(0, 0);
+        const wave = 18;
+        const amp = 7;
+        const count = Math.floor(dist / wave);
+
+        for (let i = 0; i < count; i++) {
+          const x = i * wave;
+          targetCtx.quadraticCurveTo(x + wave / 4, (i % 2 === 0 ? amp : -amp), x + wave / 2, 0);
+          targetCtx.quadraticCurveTo(x + (wave * 3) / 4, (i % 2 === 0 ? -amp : amp), x + wave, 0);
+        }
+        targetCtx.lineTo(dist, 0);
+        targetCtx.stroke();
+        drawArrowHead(dist - 6, 0, dist, 0, targetCtx);
+        targetCtx.restore();
+      }
+
+      targetCtx.restore();
+    }
+
+    function drawArrowHead(fromX, fromY, toX, toY, targetCtx) {
+      const len = 15;
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      targetCtx.beginPath();
+      targetCtx.moveTo(toX, toY);
+      targetCtx.lineTo(toX - len * Math.cos(angle - Math.PI / 6), toY - len * Math.sin(angle - Math.PI / 6));
+      targetCtx.lineTo(toX - len * Math.cos(angle + Math.PI / 6), toY - len * Math.sin(angle + Math.PI / 6));
+      targetCtx.closePath();
+      targetCtx.fill();
+    }
+
+    function clearSelectedRoutes() {
+      if (state.selectedPlayerIds.length === 0) return;
+      state.selectedPlayerIds.forEach(id => {
+        const p = state.pitchPlayers.find(pl => pl.id === id);
+        if (p) p.route = null;
+      });
+      drawAllRoutes();
+      showToast('Cleared active route(s)');
+    }
+
+    function undoActiveRoute() {
+      if (state.selectedPlayerIds.length > 0) {
+        const lastId = state.selectedPlayerIds[state.selectedPlayerIds.length - 1];
+        const p = state.pitchPlayers.find(pl => pl.id === lastId);
+        if (p && p.route) {
+          p.route = null;
+          drawAllRoutes();
+          showToast(`Undid line for ${p.name}`);
+        }
+      }
+    }
+  </script>
+
+  <script>
+    function renderPitchTokens() {
+      const container = document.getElementById('tokens-layer');
+      const ball = document.getElementById('match-ball');
+      container.innerHTML = '';
+      container.appendChild(ball);
+
+      state.pitchPlayers.forEach(p => {
+        const isSelected = state.selectedPlayerIds.includes(p.id);
+        const token = document.createElement('div');
+        token.id = `player-token-${p.id}`;
+        token.className = `player-token absolute flex flex-col items-center justify-center cursor-grab pointer-events-auto ${isSelected ? 'active-player' : ''}`;
+        token.style.left = `${p.x}%`;
+        token.style.top = `${p.y}%`;
+
+        const isNick = p.name.toLowerCase() === 'nick';
+        const isEasy = p.isGK || p.name.toLowerCase() === 'easy';
+
+        token.innerHTML = `
+          <div class="player-token-body relative w-10 h-10 sm:w-11 sm:h-11 -ml-5 -mt-5 rounded-full flex items-center justify-center font-extrabold text-sm sm:text-base border-2 transition duration-200"
+               style="background-color: #070e1c; color: ${p.ledColor}; border-color: ${p.ledColor};">
+            <span>${p.no}</span>
+            ${isEasy ? '<span class="absolute -top-1.5 -right-1.5 text-[8px] bg-yellow-400 text-slate-950 font-bold px-1.5 py-0.2 rounded-full border border-yellow-200">GK</span>' : ''}
+            ${isNick ? '<span class="absolute -bottom-1.5 -right-1.5 text-[8px] bg-cyan-400 text-slate-950 font-bold px-1.5 py-0.2 rounded-full border border-cyan-200">DEF</span>' : ''}
+          </div>
+          <div class="absolute top-6 sm:top-7 px-2 py-0.5 bg-slate-950/90 backdrop-blur-md rounded-md border border-slate-700/80 text-[10px] font-bold text-white whitespace-nowrap shadow-xl pointer-events-none flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${p.ledColor}"></span>
+            <span>${p.name}</span>
+          </div>
+        `;
+
+        setupTokenDragAndClick(token, p);
+        container.appendChild(token);
+      });
+
+      document.getElementById('active-pitch-count').innerText = `${state.pitchPlayers.length} Active`;
+    }
+
+    function setupTokenDragAndClick(tokenEl, player) {
+      let isDragging = false;
+      let movedSignificantly = false;
+      let pointerId = null;
+
+      let startPointerX = 0;
+      let startPointerY = 0;
+      let startPlayerX = 0;
+      let startPlayerY = 0;
+
+      function getPointerPosition(event) {
+        return {
+          x: event.clientX,
+          y: event.clientY
+        };
+      }
+
+      function cleanup(event) {
+        if (!isDragging) {
+          return;
+        }
+
+        isDragging = false;
+        tokenEl.classList.remove('dragging');
+
+        if (pointerId !== null) {
+          try {
+            tokenEl.releasePointerCapture(pointerId);
+          } catch (error) {
+            // Pointer capture may already have been released.
+          }
+        }
+
+        pointerId = null;
+
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerUp);
+        window.removeEventListener('pointercancel', handlePointerCancel);
+
+        if (!movedSignificantly) {
+          handlePlayerTokenClick(player.id, Boolean(event && event.shiftKey));
+        } else {
+          logAudit(`Moved ${player.name} to X:${Math.round(player.x)}% Y:${Math.round(player.y)}%`);
+        }
+
+        renderPitchTokens();
+        drawAllRoutes();
+      }
+
+      function handlePointerDown(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (state.pendingSubSource) {
+          executeBenchSubstitution(state.pendingSubSource, player);
+          return;
+        }
+
+        if (state.activeTool !== 'select') {
+          showToast(`The ${state.activeTool.toUpperCase()} tool is active. Select the pointer tool to move players.`);
+          return;
+        }
+
+        isDragging = true;
+        movedSignificantly = false;
+        pointerId = event.pointerId;
+
+        const pointer = getPointerPosition(event);
+
+        startPointerX = pointer.x;
+        startPointerY = pointer.y;
+        startPlayerX = player.x;
+        startPlayerY = player.y;
+
+        tokenEl.classList.add('dragging');
+
+        try {
+          tokenEl.setPointerCapture(pointerId);
+        } catch (error) {
+          // Some browsers do not support pointer capture in every context.
+        }
+
+        window.addEventListener('pointermove', handlePointerMove, { passive: false });
+        window.addEventListener('pointerup', handlePointerUp, { once: true });
+        window.addEventListener('pointercancel', handlePointerCancel, { once: true });
+      }
+
+      function handlePointerMove(event) {
+        if (!isDragging) {
+          return;
+        }
+
+        event.preventDefault();
+
+        const deltaX = event.clientX - startPointerX;
+        const deltaY = event.clientY - startPointerY;
+
+        if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+          movedSignificantly = true;
+        }
+
+        const rect = pitchContainer.getBoundingClientRect();
+
+        if (!rect.width || !rect.height) {
+          return;
+        }
+
+        const deltaPercentX = (deltaX / rect.width) * 100;
+        const deltaPercentY = (deltaY / rect.height) * 100;
+
+        player.x = Math.max(2, Math.min(98, startPlayerX + deltaPercentX));
+        player.y = Math.max(2, Math.min(98, startPlayerY + deltaPercentY));
+
+        tokenEl.style.left = `${player.x}%`;
+        tokenEl.style.top = `${player.y}%`;
+
+        drawAllRoutes();
+      }
+
+      function handlePointerUp(event) {
+        cleanup(event);
+      }
+
+      function handlePointerCancel(event) {
+        cleanup(event);
+      }
+
+      tokenEl.addEventListener('pointerdown', handlePointerDown, { passive: false });
+    }
+
+    function handlePlayerTokenClick(playerId, shiftKey = false) {
+      const isMulti = state.multiSelectMode || shiftKey;
+
+      if (isMulti) {
+        if (state.selectedPlayerIds.includes(playerId)) {
+          state.selectedPlayerIds = state.selectedPlayerIds.filter(id => id !== playerId);
+        } else {
+          state.selectedPlayerIds.push(playerId);
+        }
+      } else {
+        if (state.selectedPlayerIds.length === 1 && state.selectedPlayerIds[0] === playerId) {
+          state.selectedPlayerIds = [];
+        } else {
+          state.selectedPlayerIds = [playerId];
+        }
+      }
+
+      renderPitchTokens();
+      drawAllRoutes();
+
+      const activeNames = state.selectedPlayerIds.map(id => {
+        const pl = state.pitchPlayers.find(p => p.id === id);
+        return pl ? pl.name : '';
+      }).filter(Boolean);
+
+      if (activeNames.length > 0) {
+        showToast(`Route Active: ${activeNames.join(' + ')}`);
+      }
+    }
+
+    function setupBallDrag() {
+      const ball = document.getElementById('match-ball');
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let startLeft = 50, startTop = 50;
+
+      ball.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        isDragging = true;
+        ball.classList.add('scale-125');
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startX = clientX;
+        startY = clientY;
+        startLeft = state.ball.x;
+        startTop = state.ball.y;
+
+        const move = (ev) => {
+          if (!isDragging) return;
+          const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
+          const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
+          const rect = pitchContainer.getBoundingClientRect();
+          state.ball.x = Math.max(2, Math.min(98, startLeft + ((cx - startX) / rect.width) * 100));
+          state.ball.y = Math.max(2, Math.min(98, startTop + ((cy - startY) / rect.height) * 100));
+          ball.style.left = `${state.ball.x}%`;
+          ball.style.top = `${state.ball.y}%`;
+        };
+
+        const up = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          ball.classList.remove('scale-125');
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+        };
+
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+    }
+
+    function resetBallPosition() {
+      state.ball = { x: 50, y: 50 };
+      const ball = document.getElementById('match-ball');
+      ball.style.left = '50%';
+      ball.style.top = '50%';
+      logAudit('Ball reset to center kick-off');
+      showToast('Ball reset to center circle');
+    }
+
+    function setLedEffect(mode) {
+      state.ledEffect = mode;
+      const pitchWrap = document.getElementById('landscape-pitch-wrapper');
+      pitchWrap.classList.remove('led-glow', 'led-blink', 'led-steady', 'led-off');
+      pitchWrap.classList.add(`led-${mode}`);
+
+      ['glow', 'blink', 'steady', 'off'].forEach(m => {
+        const btn = document.getElementById(`btn-fx-${m}`);
+        if (m === mode) {
+          btn.className = 'px-2 py-0.5 rounded text-emerald-400 bg-emerald-500/20 font-bold';
+        } else {
+          btn.className = 'px-2 py-0.5 rounded text-slate-400 hover:text-white';
+        }
+      });
+      showToast(`LED Effect: ${mode.toUpperCase()}`);
+    }
+  </script>
+
+  <script>
+    function applyFormation(preset) {
+      state.formation = preset;
+      document.getElementById('field-formation-indicator').innerText = `${preset} Landscape Arena`;
+
+      if (preset === '2-2') {
+        state.pitchPlayers = [
+          { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 8, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+          { id: 'p-nick', name: 'Nick', no: 4, role: 'Defense (DEF)', x: 26, y: 34, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-def2', name: 'Leo', no: 3, role: 'Defense (DEF)', x: 26, y: 66, isGK: false, ledColor: '#00ff88', route: null },
+          { id: 'p-fwd1', name: 'Marco', no: 9, role: 'Forward (ATT)', x: 68, y: 34, isGK: false, ledColor: '#ec4899', route: null },
+          { id: 'p-fwd2', name: 'Mateo', no: 10, role: 'Forward (ATT)', x: 68, y: 66, isGK: false, ledColor: '#ff007f', route: null }
+        ];
+      }
+      else if (preset === '2-1-1') {
+        state.pitchPlayers = [
+          { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 8, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+          { id: 'p-nick', name: 'Nick', no: 4, role: 'Defense (DEF)', x: 25, y: 33, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-def2', name: 'Leo', no: 3, role: 'Defense (DEF)', x: 25, y: 67, isGK: false, ledColor: '#00ff88', route: null },
+          { id: 'p-mid', name: 'Sam', no: 8, role: 'Midfield Pivot', x: 50, y: 50, isGK: false, ledColor: '#a855f7', route: null },
+          { id: 'p-fwd', name: 'Marco', no: 9, role: 'Forward (ATT)', x: 75, y: 50, isGK: false, ledColor: '#ec4899', route: null }
+        ];
+      }
+      else if (preset === '2-3-1') {
+        state.pitchPlayers = [
+          { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 8, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+          { id: 'p-nick', name: 'Nick', no: 4, role: 'Defense (DEF)', x: 25, y: 36, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-def2', name: 'Leo', no: 3, role: 'Defense (DEF)', x: 25, y: 64, isGK: false, ledColor: '#00ff88', route: null },
+          { id: 'p-m1', name: 'Sam', no: 8, role: 'Center Mid', x: 48, y: 50, isGK: false, ledColor: '#a855f7', route: null },
+          { id: 'p-m2', name: 'Mateo', no: 7, role: 'Right Mid', x: 52, y: 22, isGK: false, ledColor: '#ff007f', route: null },
+          { id: 'p-m3', name: 'Carlos', no: 11, role: 'Left Mid', x: 52, y: 78, isGK: false, ledColor: '#3b82f6', route: null },
+          { id: 'p-f1', name: 'Marco', no: 9, role: 'Striker', x: 78, y: 50, isGK: false, ledColor: '#ec4899', route: null }
+        ];
+      }
+      else if (preset === '3-2-3') {
+        state.pitchPlayers = [
+          { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 8, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+          { id: 'p-nick', name: 'Nick', no: 4, role: 'Defense (DEF)', x: 24, y: 50, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-def2', name: 'Leo', no: 3, role: 'Left Back', x: 24, y: 24, isGK: false, ledColor: '#00ff88', route: null },
+          { id: 'p-def3', name: 'Carvajal', no: 2, role: 'Right Back', x: 24, y: 76, isGK: false, ledColor: '#3b82f6', route: null },
+          { id: 'p-m1', name: 'Sam', no: 8, role: 'Midfield (L)', x: 45, y: 38, isGK: false, ledColor: '#a855f7', route: null },
+          { id: 'p-m2', name: 'Mateo', no: 6, role: 'Midfield (R)', x: 45, y: 62, isGK: false, ledColor: '#ff007f', route: null },
+          { id: 'p-f1', name: 'Carlos', no: 11, role: 'Left Wing', x: 74, y: 22, isGK: false, ledColor: '#3b82f6', route: null },
+          { id: 'p-f2', name: 'Marco', no: 9, role: 'Striker', x: 78, y: 50, isGK: false, ledColor: '#ec4899', route: null },
+          { id: 'p-f3', name: 'Salah', no: 7, role: 'Right Wing', x: 74, y: 78, isGK: false, ledColor: '#f97316', route: null }
+        ];
+      }
+      else if (preset === '4-3-3') {
+        state.pitchPlayers = [
+          { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 7, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+          { id: 'p-nick', name: 'Nick', no: 4, role: 'Center Back', x: 22, y: 40, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-cb2', name: 'Leo', no: 5, role: 'Center Back', x: 22, y: 60, isGK: false, ledColor: '#00ff88', route: null },
+          { id: 'p-rb', name: 'Carvajal', no: 2, role: 'Right Back', x: 25, y: 82, isGK: false, ledColor: '#3b82f6', route: null },
+          { id: 'p-lb', name: 'Robertson', no: 3, role: 'Left Back', x: 25, y: 18, isGK: false, ledColor: '#3b82f6', route: null },
+          { id: 'p-dm', name: 'Rodri', no: 6, role: 'Anchor Pivot', x: 40, y: 50, isGK: false, ledColor: '#a855f7', route: null },
+          { id: 'p-cm1', name: 'Sam', no: 8, role: 'Center Mid', x: 52, y: 32, isGK: false, ledColor: '#a855f7', route: null },
+          { id: 'p-cm2', name: 'Modrić', no: 10, role: 'Playmaker', x: 52, y: 68, isGK: false, ledColor: '#f97316', route: null },
+          { id: 'p-lw', name: 'Carlos', no: 11, role: 'Left Wing', x: 75, y: 20, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-st', name: 'Marco', no: 9, role: 'Striker', x: 80, y: 50, isGK: false, ledColor: '#ec4899', route: null },
+          { id: 'p-rw', name: 'Mateo', no: 7, role: 'Right Wing', x: 75, y: 80, isGK: false, ledColor: '#ff007f', route: null }
+        ];
+      }
+      else if (preset === '3-5-2') {
+        state.pitchPlayers = [
+          { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 7, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+          { id: 'p-nick', name: 'Nick', no: 4, role: 'Center Back', x: 22, y: 50, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-cb2', name: 'Leo', no: 5, role: 'Left Center Back', x: 25, y: 27, isGK: false, ledColor: '#00ff88', route: null },
+          { id: 'p-cb3', name: 'Carvajal', no: 2, role: 'Right Center Back', x: 25, y: 73, isGK: false, ledColor: '#3b82f6', route: null },
+          { id: 'p-lm', name: 'Robertson', no: 3, role: 'Left Wingback', x: 45, y: 12, isGK: false, ledColor: '#22d3ee', route: null },
+          { id: 'p-cm1', name: 'Sam', no: 8, role: 'Central Midfield', x: 45, y: 38, isGK: false, ledColor: '#a855f7', route: null },
+          { id: 'p-cm2', name: 'Rodri', no: 6, role: 'Holding Midfield', x: 45, y: 62, isGK: false, ledColor: '#f97316', route: null },
+          { id: 'p-rm', name: 'Mateo', no: 7, role: 'Right Wingback', x: 45, y: 88, isGK: false, ledColor: '#ff007f', route: null },
+          { id: 'p-am', name: 'Modric', no: 10, role: 'Attacking Midfield', x: 60, y: 50, isGK: false, ledColor: '#ec4899', route: null },
+          { id: 'p-st1', name: 'Marco', no: 9, role: 'Forward', x: 78, y: 38, isGK: false, ledColor: '#ef4444', route: null },
+          { id: 'p-st2', name: 'Diego', no: 19, role: 'Forward', x: 78, y: 62, isGK: false, ledColor: '#facc15', route: null }
+        ];
+      }
+      else {
+        state.pitchPlayers = [
+          { id: 'p-easy', name: 'Easy', no: 1, role: 'Goalie (GK)', x: 7, y: 50, isGK: true, ledColor: '#ffd600', route: null },
+          { id: 'p-nick', name: 'Nick', no: 4, role: 'Defender', x: 22, y: 42, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-cb2', name: 'Leo', no: 5, role: 'Defender', x: 22, y: 58, isGK: false, ledColor: '#00ff88', route: null },
+          { id: 'p-lb', name: 'Robertson', no: 3, role: 'Defender', x: 24, y: 20, isGK: false, ledColor: '#3b82f6', route: null },
+          { id: 'p-rb', name: 'Carvajal', no: 2, role: 'Defender', x: 24, y: 80, isGK: false, ledColor: '#3b82f6', route: null },
+          { id: 'p-m1', name: 'Sam', no: 8, role: 'Midfielder', x: 48, y: 40, isGK: false, ledColor: '#a855f7', route: null },
+          { id: 'p-m2', name: 'Modrić', no: 6, role: 'Midfielder', x: 48, y: 60, isGK: false, ledColor: '#f97316', route: null },
+          { id: 'p-m3', name: 'Carlos', no: 11, role: 'Midfielder', x: 50, y: 20, isGK: false, ledColor: '#00e5ff', route: null },
+          { id: 'p-m4', name: 'Mateo', no: 7, role: 'Midfielder', x: 50, y: 80, isGK: false, ledColor: '#ff007f', route: null },
+          { id: 'p-st1', name: 'Marco', no: 9, role: 'Forward', x: 76, y: 40, isGK: false, ledColor: '#ec4899', route: null },
+          { id: 'p-st2', name: 'Diego', no: 19, role: 'Forward', x: 76, y: 60, isGK: false, ledColor: '#ffd600', route: null }
+        ];
+      }
+
+      state.selectedPlayerIds = [];
+      renderPitchTokens();
+      renderPitchRosterUI();
+      drawAllRoutes();
+      logAudit(`Switched formation to ${preset}`);
+      showToast(`Formation shifted to ${preset}`);
+    }
+
+    function renderBenchUI() {
+      const container = document.getElementById('bench-list');
+      container.innerHTML = '';
+
+      state.benchPlayers.forEach(b => {
+        const isFeatured = b.name === 'Daniel' || b.name === 'Angel';
+        const isPending = state.pendingSubSource && state.pendingSubSource.id === b.id;
+
+        const card = document.createElement('div');
+        card.className = `p-2.5 rounded-xl border transition flex items-center justify-between ${
+          isPending
+            ? 'border-cyan-400 bg-cyan-500/20 text-white animate-pulse'
+            : isFeatured
+              ? 'border-emerald-500/50 bg-emerald-500/10 text-slate-100 hover:border-emerald-400'
+              : 'border-slate-800 bg-slate-900/80 text-slate-300 hover:bg-slate-800'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs border"
+                 style="background: #050914; color: ${b.ledColor}; border-color: ${b.ledColor};">
+              ${b.no}
+            </div>
+            <div>
+              <div class="text-xs font-bold flex items-center gap-1">
+                <span>${b.name}</span>
+                ${isFeatured ? '<span class="text-[8px] font-mono uppercase bg-emerald-500/20 text-emerald-300 px-1 py-0.2 rounded border border-emerald-500/40">Extra</span>' : ''}
+              </div>
+              <div class="text-[9px] text-slate-400">${b.role}</div>
+            </div>
+          </div>
+          <button onclick="triggerBenchSubSwap('${b.id}')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-emerald-600 hover:text-white border border-slate-700 text-[10px] font-semibold transition">
+            ${isPending ? 'Cancel' : 'Sub In'}
+          </button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderPitchRosterUI() {
+      const list = document.getElementById('onpitch-list');
+      list.innerHTML = '';
+
+      state.pitchPlayers.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-1.5 rounded-lg bg-slate-900/70 border border-slate-800 text-xs';
+
+        let badge = '';
+        if (p.isGK || p.name === 'Easy') badge = '<span class="text-[8px] bg-yellow-500/20 text-yellow-300 px-1 rounded border border-yellow-500/40 font-mono">GK</span>';
+        if (p.name === 'Nick') badge = '<span class="text-[8px] bg-cyan-500/20 text-cyan-300 px-1 rounded border border-cyan-500/40 font-mono">DEF</span>';
+
+        item.innerHTML = `
+          <div class="flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold" style="background:#050811; color:${p.ledColor}; border:1px solid ${p.ledColor}">${p.no}</span>
+            <span class="font-medium text-slate-200 text-xs">${p.name}</span>
+            ${badge}
+          </div>
+          <span class="text-[9px] text-slate-400">${p.role}</span>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function triggerBenchSubSwap(benchId) {
+      if (state.pendingSubSource && state.pendingSubSource.id === benchId) {
+        state.pendingSubSource = null;
+        renderBenchUI();
+        showToast('Substitution cancelled');
+        return;
+      }
+
+      const benchPlayer = state.benchPlayers.find(b => b.id === benchId);
+      if (!benchPlayer) return;
+
+      state.pendingSubSource = benchPlayer;
+      renderBenchUI();
+      showToast(`Selected ${benchPlayer.name}. Now click any player on the field to swap them!`);
+    }
+
+    function executeBenchSubstitution(subPlayer, pitchTarget) {
+      if (!subPlayer || !pitchTarget) {
+        showToast('Substitution could not be completed');
+        state.pendingSubSource = null;
+        renderBenchUI();
+        return;
+      }
+
+      const incoming = {
+        id: `p-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name: subPlayer.name,
+        no: subPlayer.no,
+        role: subPlayer.role,
+        x: Number.isFinite(pitchTarget.x) ? pitchTarget.x : 50,
+        y: Number.isFinite(pitchTarget.y) ? pitchTarget.y : 50,
+        isGK: Boolean(pitchTarget.isGK),
+        ledColor: subPlayer.ledColor || '#00e5ff',
+        route: null
+      };
+
+      const outgoing = {
+        id: `b-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name: pitchTarget.name,
+        no: pitchTarget.no,
+        role: pitchTarget.role,
+        ledColor: pitchTarget.ledColor || '#00e5ff'
+      };
+
+      state.pitchPlayers = state.pitchPlayers.filter(player => player.id !== pitchTarget.id);
+      state.pitchPlayers.push(incoming);
+
+      state.benchPlayers = state.benchPlayers.filter(player => player.id !== subPlayer.id);
+      state.benchPlayers.push(outgoing);
+
+      state.selectedPlayerIds = [];
+      state.pendingSubSource = null;
+
+      renderPitchTokens();
+      renderBenchUI();
+      renderPitchRosterUI();
+      drawAllRoutes();
+
+      logAudit(`SUBSTITUTION: ${subPlayer.name} IN, ${pitchTarget.name} OUT`);
+      showToast(`${subPlayer.name} replaced ${pitchTarget.name}`);
+    }
+
+    function registerNewBenchPlayer() {
+      const nameInput = document.getElementById('add-bench-name');
+      const noInput = document.getElementById('add-bench-no');
+      const name = nameInput.value.trim();
+      const no = parseInt(noInput.value) || Math.floor(Math.random() * 50) + 15;
+
+      if (!name) {
+        showToast('Please specify a player name');
+        return;
+      }
+
+      const colors = ['#00ff88', '#00e5ff', '#ffd600', '#ff007f', '#a855f7', '#3b82f6'];
+      const chosenColor = colors[Math.floor(Math.random() * colors.length)];
+
+      state.benchPlayers.push({
+        id: `b-${Date.now()}`,
+        name: name,
+        no: no,
+        role: 'Extra / Reserve',
+        ledColor: chosenColor
+      });
+
+      nameInput.value = '';
+      noInput.value = '';
+      renderBenchUI();
+      logAudit(`Registered bench player: ${name} (#${no})`);
+      showToast(`${name} added to bench`);
+    }
+
+    function createNewBlankPlan() {
+      state.pitchPlayers = [];
+      state.selectedPlayerIds = [];
+      document.getElementById('field-formation-indicator').innerText = 'Custom Blank Canvas';
+      renderPitchTokens();
+      renderPitchRosterUI();
+      drawAllRoutes();
+      logAudit('Coach started a blank canvas');
+      showToast('Blank canvas ready. Use Bench or Presets to add players.');
+    }
+  </script>
+
+  <script>
+    function initializePlansStorage() {
+      const existing = SafeStorage.get('tacticslab_community_plans');
+
+      if (!existing) {
+        SafeStorage.set('tacticslab_community_plans', JSON.stringify(defaultCommunityPlans));
+      }
+    }
+
+    function getCommunityPlans() {
+      try {
+        const stored = SafeStorage.get('tacticslab_community_plans');
+
+        if (!stored) {
+          return JSON.parse(JSON.stringify(defaultCommunityPlans));
+        }
+
+        const parsed = JSON.parse(stored);
+
+        if (!Array.isArray(parsed)) {
+          return JSON.parse(JSON.stringify(defaultCommunityPlans));
+        }
+
+        return parsed;
+      } catch (error) {
+        console.warn('Could not load saved plans:', error);
+        return JSON.parse(JSON.stringify(defaultCommunityPlans));
+      }
+    }
+
+    function saveCommunityPlansToStorage(plans) {
+      const validPlans = Array.isArray(plans) ? plans : [];
+      SafeStorage.set('tacticslab_community_plans', JSON.stringify(validPlans));
+      updateHubBadgeCount();
+    }
+
+    function updateHubBadgeCount() {
+      const badge = document.getElementById('hub-count-badge');
+      const count = getCommunityPlans().length;
+      if (badge) badge.innerText = count.toString();
+    }
+
+    function openPlansHistoryModal() {
+      filterHubPlans();
+      document.getElementById('plans-hub-modal').classList.remove('hidden');
+      logAudit('Opened Plans History Hub');
+    }
+
+    function closePlansHistoryModal() {
+      document.getElementById('plans-hub-modal').classList.add('hidden');
+    }
+
+    function filterHubPlans() {
+      const query = (document.getElementById('hub-search-input').value || '').toLowerCase().trim();
+      const plans = getCommunityPlans();
+      const listEl = document.getElementById('hub-plans-list');
+      listEl.innerHTML = '';
+
+      const filtered = plans.filter(p => {
+        return p.coach.toLowerCase().includes(query) ||
+               p.title.toLowerCase().includes(query) ||
+               (p.category && p.category.toLowerCase().includes(query)) ||
+               (p.formation && p.formation.toLowerCase().includes(query));
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-6 text-slate-500 font-mono text-xs">
+            No plans matched. Click "+ Save Current" to add your new game plan!
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(plan => {
+        const card = document.createElement('div');
+        card.className = 'p-3 rounded-xl border border-slate-800 bg-slate-900/80 hover:border-cyan-500/50 transition flex items-center justify-between gap-2';
+
+        card.innerHTML = `
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-white">${plan.title}</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">${plan.category || 'Tactic'}</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">${plan.formation}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 font-mono">
+              By <b class="text-slate-200">${plan.coach}</b> • ${plan.date || 'Saved'} • ${plan.players ? plan.players.length : 0} Players
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="loadGamePlanFromHub('${plan.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs transition">Load</button>
+            <button onclick="deletePlanFromHub('${plan.id}')" title="Delete Plan" class="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-rose-400 transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    function loadGamePlanFromHub(planId) {
+      const plans = getCommunityPlans();
+      const plan = plans.find(p => p.id === planId);
+      if (!plan) return;
+
+      state.planTitle = plan.title;
+      state.coachName = plan.coach;
+      state.formation = plan.formation || '2-2';
+      if (plan.players) state.pitchPlayers = sanitizePlayers(JSON.parse(JSON.stringify(plan.players)));
+      if (plan.bench) state.benchPlayers = JSON.parse(JSON.stringify(plan.bench));
+      if (plan.notes) state.notes = JSON.parse(JSON.stringify(plan.notes));
+
+      document.getElementById('field-formation-indicator').innerText = `${state.formation} Landscape Arena`;
+
+      state.selectedPlayerIds = [];
+      renderPitchTokens();
+      renderBenchUI();
+      renderPitchRosterUI();
+      loadNotesIntoUI();
+      drawAllRoutes();
+      closePlansHistoryModal();
+
+      logAudit(`Loaded Game Plan: "${plan.title}" by ${plan.coach}`);
+      showToast(`Loaded "${plan.title}"`);
+    }
+
+    function deletePlanFromHub(planId) {
+      let plans = getCommunityPlans();
+      plans = plans.filter(p => p.id !== planId);
+      saveCommunityPlansToStorage(plans);
+      filterHubPlans();
+      showToast('Game plan removed from history');
+    }
+
+    function openSavePlanModal() {
+      document.getElementById('input-save-coach').value = state.coachName || 'Coach Bayardo';
+      document.getElementById('input-save-title').value = state.planTitle || '2-2 Arena Masterplan';
+      document.getElementById('save-plan-modal').classList.remove('hidden');
+    }
+
+    function closeSavePlanModal() {
+      document.getElementById('save-plan-modal').classList.add('hidden');
+    }
+
+    function confirmSaveGamePlan() {
+      const coach = document.getElementById('input-save-coach').value.trim() || 'Head Coach';
+      const title = document.getElementById('input-save-title').value.trim() || 'Tactical Plan';
+      const category = document.getElementById('input-save-category').value;
+
+      saveNotesToState(false);
+
+      const newPlan = {
+        id: `plan-${Date.now()}`,
+        coach: coach,
+        title: title,
+        category: category,
+        date: new Date().toISOString().split('T')[0],
+        formation: state.formation,
+        notes: JSON.parse(JSON.stringify(state.notes)),
+        players: JSON.parse(JSON.stringify(state.pitchPlayers)),
+        bench: JSON.parse(JSON.stringify(state.benchPlayers))
+      };
+
+      const plans = getCommunityPlans();
+      plans.unshift(newPlan);
+      saveCommunityPlansToStorage(plans);
+
+      state.coachName = coach;
+      state.planTitle = title;
+      document.getElementById('field-formation-indicator').innerText = `${state.formation} Landscape Arena`;
+
+      closeSavePlanModal();
+      logAudit(`Saved plan: "${title}" by ${coach}`);
+      showToast(`Plan saved to History Hub!`);
+    }
+
+    function encodePlanForUrl(payload) {
+      const json = JSON.stringify(payload);
+      const bytes = new TextEncoder().encode(json);
+
+      let binary = '';
+      for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+      }
+
+      return btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+    }
+
+    function decodePlanFromUrl(encoded) {
+      const padded = encoded
+        .replace(/-/g, '+')
+        .replace(/_/g, '/')
+        .padEnd(Math.ceil(encoded.length / 4) * 4, '=');
+
+      const binary = atob(padded);
+      const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+
+      return JSON.parse(new TextDecoder().decode(bytes));
+    }
+
+    async function shareCurrentPlanURL() {
+      saveNotesToState(false);
+
+      const payload = {
+        coach: state.coachName,
+        title: state.planTitle,
+        formation: state.formation,
+        players: state.pitchPlayers,
+        bench: state.benchPlayers,
+        notes: state.notes
+      };
+
+      const encoded = encodePlanForUrl(payload);
+      const shareUrl = `${window.location.origin}${window.location.pathname}#plan=${encoded}`;
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(shareUrl);
+        } else {
+          const input = document.createElement('input');
+          input.value = shareUrl;
+          input.setAttribute('readonly', '');
+          input.style.position = 'fixed';
+          input.style.left = '-9999px';
+
+          document.body.appendChild(input);
+          input.select();
+          document.execCommand('copy');
+          input.remove();
+        }
+
+        logAudit('Copied direct game-plan link');
+        showToast('Share link copied');
+      } catch (error) {
+        console.warn('Share link copy failed:', error);
+        showToast('Could not copy automatically');
+      }
+    }
+
+    function sanitizePlayer(player, index = 0) {
+      return {
+        id: String(player && player.id ? player.id : `player-${Date.now()}-${index}`),
+        name: String(player && player.name ? player.name : `Player ${index + 1}`),
+        no: Number.isFinite(Number(player?.no)) ? Number(player.no) : index + 1,
+        role: String(player && player.role ? player.role : 'Player'),
+        x: Number.isFinite(Number(player?.x)) ? Math.max(2, Math.min(98, Number(player.x))) : 50,
+        y: Number.isFinite(Number(player?.y)) ? Math.max(2, Math.min(98, Number(player.y))) : 50,
+        isGK: Boolean(player?.isGK),
+        ledColor: /^#[0-9a-f]{3,8}$/i.test(String(player?.ledColor || '')) ? player.ledColor : '#00e5ff',
+        route: player?.route && Array.isArray(player.route.points) ? player.route : null
+      };
+    }
+
+    function sanitizePlayers(players) {
+      if (!Array.isArray(players)) {
+        return [];
+      }
+
+      return players.map(sanitizePlayer);
+    }
+
+    function checkForSharedUrlPlan() {
+      if (!window.location.hash.startsWith('#plan=')) {
+        return false;
+      }
+
+      try {
+        const raw = window.location.hash.slice('#plan='.length);
+        const parsed = decodePlanFromUrl(raw);
+
+        if (!parsed || typeof parsed !== 'object') {
+          throw new Error('Invalid plan payload');
+        }
+
+        state.planTitle = String(parsed.title || 'Shared Game Plan');
+        state.coachName = String(parsed.coach || 'Visiting Coach');
+        state.formation = String(parsed.formation || 'Custom');
+        state.pitchPlayers = sanitizePlayers(parsed.players);
+
+        if (Array.isArray(parsed.bench)) {
+          state.benchPlayers = parsed.bench.map((player, index) => ({
+            id: String(player.id || `bench-${Date.now()}-${index}`),
+            name: String(player.name || `Reserve ${index + 1}`),
+            no: Number.isFinite(Number(player.no)) ? Number(player.no) : index + 1,
+            role: String(player.role || 'Reserve'),
+            ledColor: /^#[0-9a-f]{3,8}$/i.test(String(player.ledColor || '')) ? player.ledColor : '#00e5ff'
+          }));
+        }
+
+        if (parsed.notes && typeof parsed.notes === 'object') {
+          state.notes = {
+            defense: String(parsed.notes.defense || ''),
+            midfield: String(parsed.notes.midfield || ''),
+            subs: String(parsed.notes.subs || '')
+          };
+        }
+
+        state.selectedPlayerIds = [];
+        state.pendingSubSource = null;
+
+        document.getElementById('field-formation-indicator').innerText = `${state.formation} Landscape Arena`;
+
+        renderPitchTokens();
+        renderBenchUI();
+        renderPitchRosterUI();
+        loadNotesIntoUI();
+        drawAllRoutes();
+
+        closePlansHistoryModal();
+        closeSavePlanModal();
+        document.getElementById('tutorial-modal')?.classList.add('hidden');
+
+        logAudit(`Loaded shared board: "${state.planTitle}"`);
+        showToast(`Loaded "${state.planTitle}"`);
+        return true;
+      } catch (error) {
+        console.error('Shared plan loading failed:', error);
+        showToast('The shared plan link is invalid or corrupted');
+        return false;
+      }
+    }
+  </script>
+
+  <script>
+    function logAudit(message) {
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      state.auditLog.unshift({ time, message });
+      if (state.auditLog.length > 50) state.auditLog.pop();
+      renderAuditLogUI();
+    }
+
+    function renderAuditLogUI() {
+      const container = document.getElementById('audit-log-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      state.auditLog.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'py-1 px-1.5 rounded bg-slate-900/80 border border-slate-800 text-slate-300 flex items-start gap-1';
+        div.innerHTML = `
+          <span class="text-cyan-400 font-mono text-[9px] shrink-0 mt-0.5">${item.time}</span>
+          <span class="text-slate-200 text-[10px]">${item.message}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function clearAuditLog() {
+      state.auditLog = [];
+      renderAuditLogUI();
+      showToast('Action log cleared');
+    }
+
+    function loadNotesIntoUI() {
+      document.getElementById('notes-defense').value = state.notes.defense || '';
+      document.getElementById('notes-midfield').value = state.notes.midfield || '';
+      document.getElementById('notes-subs').value = state.notes.subs || '';
+    }
+
+    function saveNotesToState(notify = true) {
+      state.notes.defense = document.getElementById('notes-defense').value;
+      state.notes.midfield = document.getElementById('notes-midfield').value;
+      state.notes.subs = document.getElementById('notes-subs').value;
+      if (notify) {
+        logAudit('Saved coach notes');
+        showToast('Tactical notes saved');
+      }
+    }
+
+    const tutorialSteps = [
+      {
+        title: 'Expanded Landscape View',
+        body: 'The soccer field is now oriented in wide landscape format with all obstructive labels removed! <b>Easy is stationed in Goal (GK #1)</b> on the left and <b>Nick is commanding Defense (DEF #4)</b>.',
+        icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>'
+      },
+      {
+        title: 'Dedicated 2-2 & 2-1-1 Formations',
+        body: 'Use the <b>Presets</b> tab to quickly switch between the <b>2-2 Arena</b> (2 defenders, 2 forwards) and <b>2-1-1 Diamond</b> (2 defenders, 1 midfield pivot, 1 forward) or build a blank custom board.',
+        icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>'
+      },
+      {
+        title: 'Route Drawing & Clean Single View',
+        body: 'Click any player to highlight them and draw their route in their matching neon LED color. Clicking another player hides the previous route so the pitch remains completely clear. Turn on <b>Link Lines</b> at the top if you want to display multiple players\' runs together.',
+        icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>'
+      },
+      {
+        title: 'Bench & Extras: Daniel & Angel',
+        body: 'Open the <b>Bench & Subs</b> tab. Tap <b>Sub In</b> next to Daniel or Angel, then tap any player on the pitch to perform an instant substitution.',
+        icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"/></svg>'
+      },
+      {
+        title: 'Coach Plans History Hub & Sharing',
+        body: 'Click <b>Plans Hub</b> at the top to browse previously saved community coach plans. You can also save your own plans and use <b>Share</b> to send your exact strategy URL to other coaches.',
+        icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316"/></svg>'
+      }
+    ];
+
+    let currentTutIdx = 0;
+
+    function startCoachTutorial(manual = true) {
+      currentTutIdx = 0;
+      updateTutorialModalUI();
+      document.getElementById('tutorial-modal').classList.remove('hidden');
+      if (manual) logAudit('Opened interactive tutorial');
+    }
+
+    function updateTutorialModalUI() {
+      const step = tutorialSteps[currentTutIdx];
+      document.getElementById('tut-title').innerText = step.title;
+      document.getElementById('tut-body').innerHTML = step.body;
+      document.getElementById('tut-icon-box').innerHTML = step.icon;
+      document.getElementById('tut-step-counter').innerText = `${currentTutIdx + 1} / ${tutorialSteps.length}`;
+
+      const prevBtn = document.getElementById('tut-prev-btn');
+      const nextBtn = document.getElementById('tut-next-btn');
+
+      prevBtn.style.display = currentTutIdx === 0 ? 'none' : 'block';
+      nextBtn.innerText = currentTutIdx === tutorialSteps.length - 1 ? 'Start Coaching' : 'Next';
+    }
+
+    function nextTutorialStep() {
+      if (currentTutIdx < tutorialSteps.length - 1) {
+        currentTutIdx++;
+        updateTutorialModalUI();
+      } else {
+        skipTutorial();
+      }
+    }
+
+    function prevTutorialStep() {
+      if (currentTutIdx > 0) {
+        currentTutIdx--;
+        updateTutorialModalUI();
+      }
+    }
+
+    function skipTutorial() {
+      document.getElementById('tutorial-modal').classList.add('hidden');
+      SafeStorage.set('tacticslab_landscape_tut_seen', 'true');
+      showToast('TacticsLab ready! Click Nick or Easy to begin.');
+    }
+
+    function switchTab(tab) {
+      const tabs = ['formations', 'bench', 'notes', 'history'];
+      tabs.forEach(t => {
+        const content = document.getElementById(`tab-content-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (t === tab) {
+          content.classList.remove('hidden');
+          btn.classList.add('text-emerald-400', 'border-emerald-400');
+          btn.classList.remove('text-slate-400', 'border-transparent');
+        } else {
+          content.classList.add('hidden');
+          btn.classList.remove('text-emerald-400', 'border-emerald-400');
+          btn.classList.add('text-slate-400', 'border-transparent');
+        }
+      });
+    }
+
+    function toggleSidebar() {
+      document.getElementById('side-panel').classList.toggle('hidden');
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast-message');
+      const toastText = document.getElementById('toast-text');
+
+      if (!toast || !toastText) {
+        return;
+      }
+
+      toastText.textContent = String(text || 'Updated');
+
+      toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      if (toastTimer) {
+        clearTimeout(toastTimer);
+      }
+
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+      }, 2400);
+    }
+
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      document.getElementById('plans-hub-modal')?.classList.add('hidden');
+      document.getElementById('save-plan-modal')?.classList.add('hidden');
+      document.getElementById('tutorial-modal')?.classList.add('hidden');
+
+      state.pendingSubSource = null;
+      renderBenchUI();
+    });
+
+    window.addEventListener('error', event => {
+      console.error('TacticsLab runtime error:', event.error || event.message);
+    });
+
+    window.addEventListener('unhandledrejection', event => {
+      console.error('TacticsLab rejected promise:', event.reason);
+    });
+  </script>
+</body>
+</html>
